@@ -198,6 +198,18 @@ canvas#dust{position:absolute;inset:0;pointer-events:none;z-index:20}
 .thanks .fl{display:flex;align-items:center;justify-content:center;gap:22px;margin-bottom:26px}
 .thanks .fl span{font-family:var(--head);font-size:14px;letter-spacing:.24em;color:#B4443C}
 .thanks .poem3{font-family:var(--head);font-size:13.5px;line-height:2.5;color:var(--ink);letter-spacing:.05em}
+
+/* 本机回复管理视图（?admin=1） */
+.admin{position:absolute;inset:0;z-index:80;background:var(--bg);display:none;flex-direction:column;padding:54px 22px 22px;overflow:auto}
+.admin.on{display:flex}
+.admin-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.admin-hd b{font-family:var(--head);font-size:15px;letter-spacing:.14em;color:var(--ink)}
+.admin-hd span{font-size:22px;color:var(--muted);cursor:pointer;line-height:1}
+.admin-n{font-size:11px;color:var(--muted);letter-spacing:.1em;margin-bottom:10px}
+.arow{border-bottom:1px solid var(--line);padding:10px 2px;font-size:12.5px;line-height:1.9;color:var(--ink);font-family:var(--body, var(--head))}
+.arow b{color:var(--accent);font-weight:500}
+.arow small{display:block;color:var(--muted);font-size:10.5px;letter-spacing:.06em}
+.aempty{color:var(--muted);font-size:12.5px;text-align:center;padding:40px 0;letter-spacing:.1em}
 </style>
 </head>
 <body>
@@ -374,6 +386,12 @@ canvas#dust{position:absolute;inset:0;pointer-events:none;z-index:20}
     <div class="dots" id="dots"></div>
   </div>
   <div class="toast" id="toast"></div>
+  <div class="admin" id="admin">
+    <div class="admin-hd"><b>出席回复 · 本机测试数据</b><span id="adminClose">×</span></div>
+    <div class="admin-n" id="adminN"></div>
+    <div id="adminBd" style="flex:1"></div>
+    <div class="btns" style="margin:14px 0 0"><a class="btn" id="adminCsv">复制 CSV</a><a class="btn" id="adminClear">清空</a></div>
+  </div>
 </div>
 <script>
 (function(){
@@ -416,9 +434,31 @@ setTimeout(function(){shots.addEventListener('scroll',function(){
 
 $$('[data-r]').forEach(function(row){$$('label',row).forEach(function(l){l.addEventListener('click',function(){
   $$('label',row).forEach(function(x){x.classList.remove('on')});l.classList.add('on');})})});
+function rsvpList(){try{return JSON.parse(localStorage.getItem('wx_rsvp')||'[]')}catch(e){return[]}}
+function rsvpSave(o){var a=rsvpList();a.push(o);localStorage.setItem('wx_rsvp',JSON.stringify(a));return a.length}
+function pick(row){var on=$$('label.on',row);return on.length?on[0].textContent.trim():''}
 $('#f').addEventListener('submit',function(e){e.preventDefault();
-  var n=$('#f input').value.trim();toast(n?('已收到，'+n+'，谢谢！'):'已收到你的回复');e.target.reset();
-  $$('#f [data-r]').forEach(function(r){$$('label',r).forEach(function(x,i){x.classList.toggle('on',i===0)})});});
+  var f=$('#f'),n=f.querySelector('input').value.trim();
+  var rs=$$('#f [data-r]');
+  var cnt=rsvpSave({name:n||'匿名',attend:pick(rs[0]),people:pick(rs[1]),note:f.querySelector('textarea').value.trim(),t:new Date().toLocaleString('zh-CN')});
+  toast(n?('已收到，'+n+'（本机第 '+cnt+' 条）'):'已收到（本机第 '+cnt+' 条）');
+  f.reset();
+  rs.forEach(function(r){$$('label',r).forEach(function(x,i){x.classList.toggle('on',i===0)})});});
+/* 管理视图 */
+function renderAdmin(){
+  var a=rsvpList(),bd=$('#adminBd');
+  $('#adminN').textContent='共 '+a.length+' 条 · 仅存于当前浏览器 localStorage';
+  bd.innerHTML=a.length? a.slice().reverse().map(function(r){
+    return '<div class="arow"><b>'+r.name+'</b> · '+r.attend+' · '+r.people+(r.note?'<br>「'+r.note+'」':'')+'<small>'+r.t+'</small></div>';
+  }).join('') : '<div class="aempty">暂无回复记录</div>';
+}
+if(new URLSearchParams(location.search).has('admin')){$('#admin').classList.add('on');renderAdmin()}
+$('#adminClose').addEventListener('click',function(){$('#admin').classList.remove('on')});
+$('#adminClear').addEventListener('click',function(){localStorage.removeItem('wx_rsvp');renderAdmin();toast('已清空本机记录')});
+$('#adminCsv').addEventListener('click',function(){
+  var a=rsvpList();
+  var csv='姓名,是否出席,人数,留言,时间\n'+a.map(function(r){return [r.name,r.attend,r.people,r.note,r.t].map(function(v){return '"'+String(v).replace(/"/g,'""')+'"'}).join(',')}).join('\n');
+  navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(csv).then(function(){toast('CSV 已复制')}):toast('复制失败');});
 
 var ADDR='宜兴水墨涵田度假村·水墨楼（婚礼仪式：东草坪 停车场旁）';
 function toast(m){var t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show')},1900)}
