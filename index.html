@@ -440,14 +440,25 @@ setTimeout(function(){shots.addEventListener('scroll',function(){
 
 $$('[data-r]').forEach(function(row){$$('label',row).forEach(function(l){l.addEventListener('click',function(){
   $$('label',row).forEach(function(x){x.classList.remove('on')});l.classList.add('on');})})});
+/* 跨设备上报端点：留空=仅存本机；填入后每次提交同时 POST 到该地址
+   例 FormSubmit(免注册,邮件接收): 'https://formsubmit.co/ajax/你的邮箱@example.com'
+   例 Formspree: 'https://formspree.io/f/xxxxxxx'  例 Web3Forms: 'https://api.web3forms.com/submit' */
+var RSVP_ENDPOINT='';
 function rsvpList(){try{return JSON.parse(localStorage.getItem('wx_rsvp')||'[]')}catch(e){return[]}}
 function rsvpSave(o){var a=rsvpList();a.push(o);localStorage.setItem('wx_rsvp',JSON.stringify(a));return a.length}
 function pick(row){var on=$$('label.on',row);return on.length?on[0].textContent.trim():''}
 $('#f').addEventListener('submit',function(e){e.preventDefault();
   var f=$('#f'),n=f.querySelector('input').value.trim();
   var rs=$$('#f [data-r]');
-  var cnt=rsvpSave({name:n||'匿名',attend:pick(rs[0]),people:pick(rs[1]),note:f.querySelector('textarea').value.trim(),t:new Date().toLocaleString('zh-CN')});
-  toast(n?('已收到，'+n+'（本机第 '+cnt+' 条）'):'已收到（本机第 '+cnt+' 条）');
+  var rec={name:n||'匿名',attend:pick(rs[0]),people:pick(rs[1]),note:f.querySelector('textarea').value.trim(),t:new Date().toLocaleString('zh-CN')};
+  var cnt=rsvpSave(rec);
+  if(RSVP_ENDPOINT){
+    fetch(RSVP_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(rec)})
+      .then(function(r){toast(n?('已收到，'+n+'，谢谢！'):'已收到，谢谢！')})
+      .catch(function(){toast('已暂存本机（网络上报失败）')});
+  } else {
+    toast(n?('已收到，'+n+'（本机第 '+cnt+' 条）'):'已收到（本机第 '+cnt+' 条）');
+  }
   f.reset();
   rs.forEach(function(r){$$('label',r).forEach(function(x,i){x.classList.toggle('on',i===0)})});});
 /* 管理视图 */
