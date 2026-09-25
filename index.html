@@ -370,6 +370,32 @@ canvas#dust{position:absolute;inset:0;pointer-events:none;z-index:20}
     </section>
 
     <section class="pg" data-name="回复">
+      <div class="cap a">出 席 确 认</div>
+      <div class="plain" style="text-align:center">
+        <p class="a" style="font-family:var(--head);font-size:13px;color:var(--muted);letter-spacing:.1em;line-height:2;margin-bottom:26px">请于 10 月 18 日前回复<br>方便我们安排席位与餐位</p>
+        <div class="a d1" style="margin:0 6px">
+          <a class="btn solid" style="display:block;padding:15px;font-size:14px;letter-spacing:.24em" href="https://my.feishu.cn/share/base/form/shrcndYoh0E3Yl3LeRO6oREn2re" id="feishu">前 往 报 名 表 单</a>
+        </div>
+        <p class="a d2" style="margin-top:18px;font-size:10.5px;color:var(--muted);letter-spacing:.12em;line-height:2">回复将直接写入新人的飞书多维表格<br>仅需填写：姓名 + 报名人数</p>
+        <div class="xi a d3" style="font-size:30px;margin-top:26px">囍</div>
+      </div>
+    </section>
+
+    <section class="pg" data-name="信息">
+      <div class="banner"><img src="assets/info.jpg" alt=""><div class="veil soft"></div>
+        <div class="mid" style="top:38px"><div class="scr a" style="font-size:30px">Wedding Invitation</div><div class="std a d1">S A V E &nbsp; T H E &nbsp; D A T E</div></div>
+      </div>
+      <div class="frost a d2" style="background:var(--card);backdrop-filter:none;box-shadow:0 10px 30px rgba(30,24,18,.10)">
+        <div class="d1x">2026年10月25日 10时58分<br>农历 九月十六（星期日）</div>
+        <div class="d2x">宜兴水墨涵田度假村 · 水墨楼<br>婚礼仪式 | 10:58a.m | 东草坪（停车场旁）<br>婚礼午宴 | 11:58a.m | 水墨楼7楼水墨C厅</div>
+        <div class="map"><img src="assets/map.png" alt="水墨涵田度假村位置示意图"></div>
+        <div style="margin-top:8px;font-size:8px;letter-spacing:.12em;color:#9a9184">BGM · Pachelbel Canon in D · Mutopia · CC BY 4.0</div>
+        <div class="btns"><a class="btn" id="copy">复制地址</a><a class="btn" id="nav">一键导航</a></div>
+        <div class="btns" style="margin-top:8px"><a class="btn solid" id="signup" style="flex:1">报 名 出 席</a></div>
+      </div>
+    </section>
+
+    <section class="pg" data-name="回复">
       <div class="cap a">出席确认</div>
       <div class="plain">
         <form class="form a" id="f">
@@ -447,7 +473,7 @@ var RSVP_ENDPOINT='';
 function rsvpList(){try{return JSON.parse(localStorage.getItem('wx_rsvp')||'[]')}catch(e){return[]}}
 function rsvpSave(o){var a=rsvpList();a.push(o);localStorage.setItem('wx_rsvp',JSON.stringify(a));return a.length}
 function pick(row){var on=$$('label.on',row);return on.length?on[0].textContent.trim():''}
-$('#f').addEventListener('submit',function(e){e.preventDefault();
+if($('#f'))$('#f').addEventListener('submit',function(e){e.preventDefault();
   var f=$('#f'),n=f.querySelector('input').value.trim();
   var rs=$$('#f [data-r]');
   var rec={name:n||'匿名',attend:pick(rs[0]),people:pick(rs[1]),note:f.querySelector('textarea').value.trim(),t:new Date().toLocaleString('zh-CN')};
@@ -511,7 +537,7 @@ function toast(m){var t=$('#toast');t.textContent=m;t.classList.add('show');clea
 $('#copy').addEventListener('click',function(){navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(ADDR).then(function(){toast('地址已复制')}):toast('请长按复制')});
 $('#nav').addEventListener('click',function(){toast('正式版唤起腾讯地图')});
 $('#share').addEventListener('click',function(){toast('请在微信右上角「···」转发')});
-$('#signup').addEventListener('click',function(){pgs[pgs.length-1].scrollIntoView({behavior:'smooth'});setTimeout(function(){var inp=$('#f input');inp&&inp.focus({preventScroll:true})},900);});
+$('#signup').addEventListener('click',function(){pgs[pgs.length-1].scrollIntoView({behavior:'smooth'})});
 /* 背景音乐 */
 var bgm=$('#bgm');
 $('#music').addEventListener('click',function(){
