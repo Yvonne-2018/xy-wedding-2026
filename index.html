@@ -431,9 +431,14 @@ var bgm=$('#bgm');
 $('#music').addEventListener('click',function(){
   if(bgm.paused){bgm.play().catch(function(){toast('请先点一下页面再开音乐')})}else{bgm.pause()}});
 function tryBgm(){bgm.play().catch(function(){})}
+if(typeof WeixinJSBridge!=='undefined'){tryBgm()}else{document.addEventListener('WeixinJSBridgeReady',tryBgm,false)}
 tryBgm();
-document.addEventListener('WeixinJSBridgeReady',tryBgm,false);
-['touchstart','click'].forEach(function(ev){document.addEventListener(ev,function h(){tryBgm();document.removeEventListener(ev,h)})});
+document.addEventListener('DOMContentLoaded',tryBgm);
+addEventListener('pageshow',tryBgm);
+['touchstart','touchend','click','wheel','keydown'].forEach(function(ev){
+  document.addEventListener(ev,function h(){tryBgm();document.removeEventListener(ev,h)},{passive:true})});
+bgm.addEventListener('play',function(){$('#music').classList.add('playing')});
+bgm.addEventListener('pause',function(){$('#music').classList.remove('playing')});
 
 /* 自动播放：页内横滑逐张推进，走完再翻页；每页停留按目标页配置 */
 var AP_PAGE=4600, AP_SHOT=2600, apOn=false, apT=null;
@@ -456,13 +461,18 @@ function apTick(){
   var pg=pgs[cur],rail=railOf(pg);
   if(rail){
     var cards=$$('.shot',rail),i=railIdx(rail);
-    if(i<cards.length-1){railGo(rail,i+1);apT=setTimeout(apTick,AP_SHOT);return}
+    if(i<cards.length-1){
+      /* 首张补偿 flip 的 700ms 等待，其余立即推进，保证每张统一 AP_SHOT */
+      apT=setTimeout(function(){ if(!apOn)return; railGo(rail,i+1); apT=setTimeout(apTick,AP_SHOT); }, i===0?Math.max(AP_SHOT-700,1200):0);
+      return;
+    }
     apT=setTimeout(flip,1200);return;   /* 末张多停 1.2s 再翻 */
   }
   apT=setTimeout(flip, DW[pg.dataset.name]||AP_PAGE);
 }
 function flip(){
   if(!apOn)return;
+  if(pgs[cur].dataset.name==='信息'){setAP(false);toast('播放到此 · 报名请点「报名出席」');return}
   if(cur>=pgs.length-1){setAP(false);toast('已播完，可手动回看');return}
   var prev=railOf(pgs[cur]);
   pgs[cur+1].scrollIntoView({behavior:'smooth'});
