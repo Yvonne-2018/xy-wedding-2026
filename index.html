@@ -210,6 +210,12 @@ canvas#dust{position:absolute;inset:0;pointer-events:none;z-index:20}
 .arow b{color:var(--accent);font-weight:500}
 .arow small{display:block;color:var(--muted);font-size:10.5px;letter-spacing:.06em}
 .aempty{color:var(--muted);font-size:12.5px;text-align:center;padding:40px 0;letter-spacing:.1em}
+.arow .ops{margin-top:6px}
+.arow .ops a{font-size:11px;color:var(--accent);letter-spacing:.12em;cursor:pointer;margin-right:14px}
+.aedit{display:flex;flex-direction:column;gap:8px}
+.aedit input,.aedit select,.aedit textarea{width:100%;padding:8px 10px;border:1px solid var(--line);background:var(--card);border-radius:2px;font-family:var(--head);font-size:12.5px;color:var(--ink);outline:none}
+.aedit textarea{height:52px;resize:none}
+.aedit .r2{display:flex;gap:8px}
 </style>
 </head>
 <body>
@@ -445,13 +451,42 @@ $('#f').addEventListener('submit',function(e){e.preventDefault();
   f.reset();
   rs.forEach(function(r){$$('label',r).forEach(function(x,i){x.classList.toggle('on',i===0)})});});
 /* 管理视图 */
+function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 function renderAdmin(){
   var a=rsvpList(),bd=$('#adminBd');
   $('#adminN').textContent='共 '+a.length+' 条 · 仅存于当前浏览器 localStorage';
-  bd.innerHTML=a.length? a.slice().reverse().map(function(r){
-    return '<div class="arow"><b>'+r.name+'</b> · '+r.attend+' · '+r.people+(r.note?'<br>「'+r.note+'」':'')+'<small>'+r.t+'</small></div>';
-  }).join('') : '<div class="aempty">暂无回复记录</div>';
+  bd.innerHTML=a.length? a.map(function(r,i){
+    return '<div class="arow" data-i="'+i+'"><b>'+esc(r.name)+'</b> · '+esc(r.attend)+' · '+esc(r.people)+(r.note?'<br>「'+esc(r.note)+'」':'')+'<small>'+esc(r.t)+(r.edited?' · 已编辑 '+esc(r.edited):'')+'</small>'+'<div class="ops"><a data-act="edit">编辑</a></div></div>';
+  }).reverse().join('') : '<div class="aempty">暂无回复记录</div>';
 }
+function startEdit(row){
+  var a=rsvpList(),i=+row.dataset.i,r=a[i];
+  row.innerHTML='<div class="aedit">'
+   +'<input data-f="name" value="'+esc(r.name)+'">'
+   +'<div class="r2"><select data-f="attend"><option>出席</option><option>缺席</option></select>'
+   +'<select data-f="people"><option>1 位</option><option>2 位</option><option>3 位+</option></select></div>'
+   +'<textarea data-f="note">'+esc(r.note)+'</textarea>'
+   +'<div class="ops"><a data-act="save">保存</a><a data-act="cancel">取消</a></div></div>';
+  row.querySelector('[data-f=attend]').value=r.attend;
+  row.querySelector('[data-f=people]').value=r.people;
+  row.querySelector('[data-f=name]').focus();
+}
+$('#adminBd').addEventListener('click',function(e){
+  var t=e.target.closest('[data-act]');if(!t)return;
+  var row=t.closest('.arow'),i=+row.dataset.i;
+  if(t.dataset.act==='edit')startEdit(row);
+  if(t.dataset.act==='cancel')renderAdmin();
+  if(t.dataset.act==='save'){
+    var a=rsvpList();
+    a[i]={name:row.querySelector('[data-f=name]').value.trim()||'匿名',
+          attend:row.querySelector('[data-f=attend]').value,
+          people:row.querySelector('[data-f=people]').value,
+          note:row.querySelector('[data-f=note]').value.trim(),
+          t:a[i].t, edited:new Date().toLocaleString('zh-CN')};
+    localStorage.setItem('wx_rsvp',JSON.stringify(a));
+    renderAdmin();toast('第 '+(i+1)+' 条已更新');
+  }
+});
 if(new URLSearchParams(location.search).has('admin')){$('#admin').classList.add('on');renderAdmin()}
 $('#adminClose').addEventListener('click',function(){$('#admin').classList.remove('on')});
 $('#adminClear').addEventListener('click',function(){localStorage.removeItem('wx_rsvp');renderAdmin();toast('已清空本机记录')});
